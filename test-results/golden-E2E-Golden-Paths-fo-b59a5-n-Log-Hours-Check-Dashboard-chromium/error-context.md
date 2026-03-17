@@ -1,0 +1,73 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - list
+    - region "Notifications alt+T"
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Control Horario
+                  - generic:
+                    - list:
+                      - listitem:
+                        - link:
+                          - /url: /
+                          - img
+                          - generic: Registrar Horas
+                      - listitem:
+                        - link:
+                          - /url: /my-projects
+                          - img
+                          - generic: Mis Proyectos
+                      - listitem:
+                        - link:
+                          - /url: /history
+                          - img
+                          - generic: Historial
+                      - listitem:
+                        - link:
+                          - /url: /statistics
+                          - img
+                          - generic: Estadísticas
+                      - listitem:
+                        - link:
+                          - /url: /help
+                          - img
+                          - generic: Ayuda
+              - generic:
+                - list:
+                  - listitem:
+                    - button:
+                      - img
+                      - generic: Cerrar sesión
+                - generic: E2E Test User 647619 · Mechanical Engineers
+        - generic:
+          - banner:
+            - button:
+              - img
+              - generic: Toggle Sidebar
+            - generic: E2E Test User 647619
+          - main:
+            - generic:
+              - generic:
+                - img
+                - heading [level=1]: Registrar Horas
+              - generic:
+                - generic:
+                  - heading [level=3]: "Paso 5: Seleccionar Tarea"
+                - generic:
+                  - combobox [expanded]:
+                    - generic: Elige una tarea
+                    - img
+                  - generic:
+                    - button: Atrás
+                    - button [disabled]: Siguiente
+  - listbox [active] [ref=e1]
+```

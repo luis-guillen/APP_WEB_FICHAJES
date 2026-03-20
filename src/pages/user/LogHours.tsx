@@ -168,7 +168,7 @@ export default function LogHours() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
                 <Button disabled={!roleInProject} onClick={() => setStep(3)} className="flex-1">Siguiente</Button>
               </div>
@@ -179,7 +179,7 @@ export default function LogHours() {
           {step === 3 && (
             <>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Atrás</Button>
                 <Button onClick={() => setStep(4)} className="flex-1">Siguiente</Button>
               </div>
@@ -193,7 +193,7 @@ export default function LogHours() {
                 <Switch checked={isHoliday} onCheckedChange={setIsHoliday} id="holiday" />
                 <Label htmlFor="holiday">Este día es festivo</Label>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(3)} className="flex-1">Atrás</Button>
                 <Button onClick={() => setStep(5)} className="flex-1">Siguiente</Button>
               </div>
@@ -229,7 +229,7 @@ export default function LogHours() {
                   )}
                 </>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(4)} className="flex-1">Atrás</Button>
                 <Button disabled={!taskCode} onClick={() => setStep(6)} className="flex-1">Siguiente</Button>
               </div>
@@ -289,7 +289,7 @@ export default function LogHours() {
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(5)} className="flex-1">Atrás</Button>
                 <Button onClick={handleSubmit} disabled={!hours || mutation.isPending} className="flex-1 gap-2">
                   <CheckCircle2 className="h-4 w-4" />

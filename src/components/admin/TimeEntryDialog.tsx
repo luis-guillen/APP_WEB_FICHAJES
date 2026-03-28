@@ -204,8 +204,9 @@ export function TimeEntryDialog({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">Ninguno</SelectItem>
-                                        <SelectItem value="personal">Vehículo Personal</SelectItem>
-                                        <SelectItem value="company">Vehículo Empresa</SelectItem>
+                                        <SelectItem value="coche_personal">Coche particular</SelectItem>
+                                        <SelectItem value="moto_personal">Moto particular</SelectItem>
+                                        <SelectItem value="company">Vehículo de empresa</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

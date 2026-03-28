@@ -36,10 +36,9 @@ export default function LogHours() {
   const [isHoliday, setIsHoliday] = useState(false);
   const [taskCode, setTaskCode] = useState("");
   const [hours, setHours] = useState("");
-  // Values: "particular" | "empresa"  (match what the dashboard/backend expect)
-  const [vehicleUsed, setVehicleUsed] = useState<"particular" | "empresa">("empresa");
+  const [vehicleUsed, setVehicleUsed] = useState<string>("empresa");
   const [mealsAllowance, setMealsAllowance] = useState(false);
-  const [tripType, setTripType] = useState<"to" | "from" | "round">("round");
+  const [travelTime, setTravelTime] = useState(""); // horas de desplazamiento (solo ida)
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ["myProjects"],
@@ -79,7 +78,7 @@ export default function LogHours() {
     setHours("");
     setVehicleUsed("empresa");
     setMealsAllowance(false);
-    setTripType("round");
+    setTravelTime("");
   };
 
   const mutation = useMutation({
@@ -103,10 +102,11 @@ export default function LogHours() {
       hours: parseFloat(hours),
       overtime_hours: 0, // Backend auto-splits hours > 8 into overtime
       ...(isClientTask && {
-        vehicle_type: vehicleUsed,    // "particular" | "empresa"
+        vehicle_type: vehicleUsed,
         meals: mealsAllowance,
-        distance_origin: "NAVE",         // Only workshop origin supported
-        trip_type: tripType,       // "to" | "from" | "round"
+        distance_origin: "NAVE",
+        trip_type: "round",  // siempre ida+vuelta; el backend×2 aplica en el tiempo
+        travel_time: travelTime ? parseFloat(travelTime) : 0, // tiempo de IDA (se multiplica ×2 en el export)
       }),
     });
   };
@@ -138,7 +138,7 @@ export default function LogHours() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Paso {step}: {stepTitles[step - 1]}</CardTitle>
+          <CardTitle className="text-lg">Paso {step}: {step === 6 ? "Registro Final" : stepTitles[step - 1]}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
 
@@ -264,28 +264,35 @@ export default function LogHours() {
                     <Label>Vehículo utilizado</Label>
                     <Select
                       value={vehicleUsed}
-                      onValueChange={(v: "particular" | "empresa") => setVehicleUsed(v)}
+                      onValueChange={setVehicleUsed}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="particular">Vehículo particular</SelectItem>
+                        <SelectItem value="coche_personal">Coche particular</SelectItem>
+                        <SelectItem value="moto_personal">Moto particular</SelectItem>
                         <SelectItem value="empresa">Vehículo de empresa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* IDA / VUELTA / IDA Y VUELTA */}
+                  {/* Horas de desplazamiento */}
                   <div>
-                    <Label>Tipo de trayecto</Label>
-                    <Select value={tripType} onValueChange={(v: "to" | "from" | "round") => setTripType(v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="round">Ida y Vuelta (×2 km)</SelectItem>
-                        <SelectItem value="to">Solo Ida (×1 km)</SelectItem>
-                        <SelectItem value="from">Solo Vuelta (×1 km)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Horas de desplazamiento (trayecto)</Label>
+                    <Input
+                      type="number" min="0" max="12" step="0.5"
+                      value={travelTime}
+                      onChange={e => setTravelTime(e.target.value)}
+                      placeholder="ej. 1.5"
+                    />
+                    {travelTime && hours && parseFloat(travelTime) > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Horas netas efectivas: <strong>{(parseFloat(hours) - parseFloat(travelTime) * 2).toFixed(1)}h</strong>
+                        {" "}<span className="opacity-60">(trayecto: {parseFloat(travelTime).toFixed(1)}h ida × 2)</span>
+                      </p>
+                    )}
                   </div>
+
+                  {/* Tipo de trayecto eliminado: siempre ida+vuelta, el backend aplica ×2 */}
                 </div>
               )}
 

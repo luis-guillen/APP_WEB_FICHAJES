@@ -114,17 +114,15 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         "F": 25,   # Desc. artículo
         "G": 10,   # Horas
         "H": 12,   # Desplaz. (h)
-        "I": 10,   # Precio
-        "J": 15,   # Transporte
-        "K": 15,   # Origen
-        "L": 10,   # KMs
-        "M": 10,   # Dieta
+        "I": 15,   # Transporte
+        "J": 10,   # KMs
+        "K": 10,   # Dieta
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
 
     HEADERS = ["Fecha", "Festivo", "Cód. empleado", "Nombre", "Cód. artículo", "Desc. artículo", 
-               "Horas", "Desplaz. (h)", "Precio", "Transporte", "Origen", "KMs", "Dieta"]
+               "Horas", "Desplaz. (h)", "Transporte", "KMs", "Dieta"]
 
     # Style for holiday rows
     holiday_fill = PatternFill("solid", fgColor="FFC7CE")  # light red
@@ -165,27 +163,34 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
             task_code = str(row_info["task_code"])
             is_holiday = row_info.get("is_holiday", False)
             
-            # Mapeo de términos para mejor lectura
-            transporte = "Particular" if row_info["vehicle"] in ("personal", "particular") else ("Empresa" if row_info["vehicle"] in ("company", "empresa") else "-")
-            
-            tipo_trayecto = ""
-            if row_info["trip_type"] == "to": tipo_trayecto = "(IDA)"
-            elif row_info["trip_type"] == "from": tipo_trayecto = "(VUELTA)"
-            elif row_info["trip_type"] == "round": tipo_trayecto = "(IDA+VTA)"
-            
-            origin_base = "NAVE" if row_info["origin"] == "workshop" else (str(row_info["origin"]) if row_info["origin"] else "-")
-            origen = f"{origin_base} {tipo_trayecto}".strip()
+            # Mapeo de términos para mejor lectura: coche, moto o empresa
+            v_type = str(row_info["vehicle"] or "").lower()
+            if "coche" in v_type:
+                transporte = "Coche particular"
+            elif "moto" in v_type:
+                transporte = "Moto particular"
+            elif v_type in ("personal", "particular"):
+                transporte = "Particular"
+            elif v_type in ("company", "empresa"):
+                transporte = "Empresa"
+            else:
+                transporte = "-"
             
             dieta = "SÍ" if row_info["meals"] else ("NO" if row_info["meals"] is False else "-")
             
-            # Cálculo de KM: Solo si el coche es PARTICULAR
+            # Cálculo de KM: Solo si el coche o moto es PARTICULAR
             kms = 0.0
-            if row_info["vehicle"] in ("personal", "particular"):
+            if any(x in v_type for x in ("personal", "particular", "coche", "moto")):
                 # Multiplicador: IDA=1, VUELTA=1, AMBOS=2
                 multiplier = 2.0 if row_info["trip_type"] == "round" else 1.0
                 dist_base = float(row_info["project_distance"] or 0.0)
                 kms = dist_base * multiplier
             
+            # travel_time guardado = solo ida → ×2 para ida+vuelta
+            one_way_travel = float(row_info.get("travel_time", 0) or 0)
+            round_trip_travel = one_way_travel * 2.0
+            net_hours = max(0.0, row_info["hours"] - round_trip_travel)
+
             row_data = [
                 row_info["date"].strftime("%d-%m-%Y"),                 # Fecha
                 "SÍ" if is_holiday else "",                            # Festivo
@@ -193,11 +198,9 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                 row_info["emp_name"],                                  # Nombre operario
                 int(task_code) if task_code.isdigit() else task_code,  # Cód. artículo (tarea)
                 row_info["task_name"],                                 # Desc. artículo
-                row_info["hours"],                                     # Horas
-                row_info.get("travel_time", 0),                        # Desplaz. (h)
-                0.00,                                                  # Precio (placeholder)
+                net_hours,                                             # Horas (neto: total - ida×2)
+                round_trip_travel,                                     # Desplaz. (h) ida+vuelta
                 transporte,                                            # Transporte
-                origen,                                                # Origen
                 kms,                                                   # KMs
                 dieta,                                                 # Dieta
             ]
@@ -217,9 +220,9 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                     cell.alignment = data_alignment_center
                 elif col_idx in (3, 5):  # códigos numéricos
                     cell.alignment = data_alignment_center
-                elif col_idx in (4, 6, 10, 11, 13):  # textos y etiquetas
+                elif col_idx in (4, 6, 9, 11):  # textos y etiquetas
                     cell.alignment = data_alignment_left
-                elif col_idx in (7, 8, 9, 12):  # Horas / Desplaz. / Precio / KMs
+                elif col_idx in (7, 8, 10):  # Horas / Desplaz. / KMs
                     cell.alignment = data_alignment_right
                     cell.number_format = '#,##0.00'
 
@@ -270,19 +273,10 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         travel_cell.number_format = '#,##0.00'
         travel_cell.border = thin_border
         travel_cell.fill = total_fill
-
-        # Fórmula SUM para Precio (col I)
-        price_cell = ws.cell(row=current_row, column=9)
-        price_cell.value = f"=SUM(I{first_data_row}:I{last_data_row})"
-        price_cell.font = total_font
-        price_cell.alignment = data_alignment_right
-        price_cell.number_format = '#,##0.00'
-        price_cell.border = thin_border
-        price_cell.fill = total_fill
         
-        # Columna de totales para KMs (col L)
-        km_total_cell = ws.cell(row=current_row, column=12)
-        km_total_cell.value = f"=SUM(L{first_data_row}:L{last_data_row})"
+        # Columna de totales para KMs (col J)
+        km_total_cell = ws.cell(row=current_row, column=10)
+        km_total_cell.value = f"=SUM(J{first_data_row}:J{last_data_row})"
         km_total_cell.font = total_font
         km_total_cell.alignment = data_alignment_right
         km_total_cell.number_format = '#,##0.00'

@@ -18,12 +18,17 @@ class UserCreate(UserBase):
     password: str
     is_admin: Optional[bool] = False
 
+class UserUpdateProjectRole(BaseModel):
+    project_id: str
+    role: str
+
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     home_location: Optional[str] = None
     role: Optional[str] = None
     password: Optional[str] = None
     is_admin: Optional[bool] = None
+    assigned_projects: Optional[List[UserUpdateProjectRole]] = None
 
 class UserResponse(UserBase):
     id: str

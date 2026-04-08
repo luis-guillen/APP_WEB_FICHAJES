@@ -13,9 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 
+import { projectService, ProjectResponse } from "@/services/projectService";
+
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: userService.getUsers });
+  const { data: projects = [] as ProjectResponse[] } = useQuery({ queryKey: ["projects"], queryFn: projectService.getAllProjects });
 
   const createMutation = useMutation({
     mutationFn: userService.createUser,
@@ -55,6 +58,9 @@ export default function UsersPage() {
   const [homeLocation, setHomeLocation] = useState("");
   const [role, setRole] = useState<string>("");
   const [password, setPassword] = useState("");
+  const [assignedProjects, setAssignedProjects] = useState<any[]>([]);
+  const [newProjectId, setNewProjectId] = useState("");
+  const [newProjectRole, setNewProjectRole] = useState("");
 
   const resetForm = () => {
     setEditingUserId(null);
@@ -63,6 +69,9 @@ export default function UsersPage() {
     setHomeLocation("");
     setRole("");
     setPassword("");
+    setAssignedProjects([]);
+    setNewProjectId("");
+    setNewProjectRole("");
   };
 
   const handleOpenCreate = () => {
@@ -77,14 +86,29 @@ export default function UsersPage() {
     setHomeLocation(user.home_location || "");
     setRole(user.role);
     setPassword(""); // Clear password field for security
+    setAssignedProjects([...(user.assigned_projects || [])]);
+    setNewProjectId("");
+    setNewProjectRole(user.role);
     setOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!name || !role) return;
+    if (!name || (!role && !editingUserId)) return;
     
     if (editingUserId) {
-      const data: any = { name, home_location: homeLocation, role };
+      let finalProjects = [...assignedProjects];
+      if (newProjectId && newProjectRole) {
+        const pInfo = projects.find((p: any) => p.id === newProjectId);
+        if (pInfo && !finalProjects.find(ap => ap.project_id === newProjectId)) {
+           finalProjects.push({
+             project_id: newProjectId,
+             project_code: pInfo.code,
+             project_name: pInfo.name,
+             role: newProjectRole
+           });
+        }
+      }
+      const data: any = { name, home_location: homeLocation, role, assigned_projects: finalProjects };
       if (password) data.password = password;
       updateMutation.mutate({ id: editingUserId, data });
     } else {
@@ -135,26 +159,92 @@ export default function UsersPage() {
               <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
 
-            {/* Visualización de roles por proyecto en modo edición */}
+            {/* Edición de roles por proyecto en modo edición */}
             {editingUserId && (
-              <div className="pt-4 border-t mt-4 space-y-2">
-                 <Label className="text-sm font-semibold">Proyectos y Roles Asignados</Label>
-                 {(() => {
-                   const u = users.find((x: any) => x.id === editingUserId);
-                   if (!u || !u.assigned_projects || u.assigned_projects.length === 0) {
-                     return <p className="text-sm text-muted-foreground">El usuario no está asignado a ningún proyecto.</p>;
-                   }
-                   return (
-                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                       {u.assigned_projects.map((p: any) => (
-                         <div key={p.project_id} className="flex justify-between items-center text-sm bg-muted/50 p-2 rounded">
-                            <span className="font-medium truncate mr-2">[{p.project_code}] {p.project_name}</span>
-                            <Badge variant="outline">{p.role}</Badge>
-                         </div>
-                       ))}
-                     </div>
-                   );
-                 })()}
+              <div className="pt-4 border-t mt-4 space-y-3">
+                 <Label className="text-sm font-semibold block text-primary">Proyectos y Roles Asignados</Label>
+                 
+                 {/* Añadir nuevo proyecto */}
+                 <div className="flex gap-2 items-end bg-muted/30 p-3 rounded-lg border border-dashed">
+                    <div className="flex-1">
+                      <Label className="text-xs">Proyecto</Label>
+                      <Select value={newProjectId} onValueChange={setNewProjectId}>
+                        <SelectTrigger className="h-8"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {projects.filter(p => !assignedProjects.find(ap => ap.project_id === p.id)).map(p => (
+                            <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs">Rol en Proyecto</Label>
+                      <Select value={newProjectRole} onValueChange={setNewProjectRole}>
+                        <SelectTrigger className="h-8"><SelectValue placeholder="Rol..." /></SelectTrigger>
+                        <SelectContent>
+                          {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="secondary"
+                      className="h-8"
+                      disabled={!newProjectId || !newProjectRole}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const projectInfo = projects.find((p: any) => p.id === newProjectId);
+                        if (!projectInfo) return;
+                        setAssignedProjects([...assignedProjects, {
+                          project_id: newProjectId,
+                          project_code: projectInfo.code,
+                          project_name: projectInfo.name,
+                          role: newProjectRole
+                        }]);
+                        setNewProjectId("");
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                 </div>
+
+                 {/* Lista editable de proyectos actuales */}
+                 {assignedProjects.length === 0 ? (
+                   <p className="text-sm text-muted-foreground p-2">El usuario no está asignado a ningún proyecto.</p>
+                 ) : (
+                   <div className="space-y-2 max-h-40 overflow-y-auto">
+                     {assignedProjects.map((p: any, idx) => (
+                       <div key={p.project_id} className="flex gap-2 items-center text-sm bg-card border shadow-sm p-2 rounded-lg">
+                          <span className="font-medium truncate flex-1 leading-tight text-xs ml-1">
+                            [{p.project_code}] {p.project_name}
+                          </span>
+                          <Select 
+                            value={p.role} 
+                            onValueChange={(newRole) => {
+                               const updated = [...assignedProjects];
+                               updated[idx].role = newRole;
+                               setAssignedProjects(updated);
+                            }}
+                          >
+                            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setAssignedProjects(assignedProjects.filter(ap => ap.project_id !== p.project_id));
+                            }}
+                          >
+                             <Trash2 className="h-4 w-4" />
+                          </Button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
               </div>
             )}
 

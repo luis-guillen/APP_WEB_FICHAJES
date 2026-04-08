@@ -76,6 +76,16 @@ def update_user(db: Session, user_id: str, user_in: UserUpdate, actor_id: str | 
     if "password" in update_data:
         db_user.password_hash = get_password_hash(update_data.pop("password"))
         
+    if "assigned_projects" in update_data:
+        projects_data = update_data.pop("assigned_projects")
+        if projects_data is not None:
+            # Eliminar asignaciones actuales
+            from app.models.project_user import ProjectUser
+            db.query(ProjectUser).filter(ProjectUser.user_id == user_id).delete()
+            # Añadir las nuevas
+            for p in projects_data:
+                db.add(ProjectUser(user_id=user_id, project_id=p["project_id"], role=p["role"]))
+
     for field, value in update_data.items():
         setattr(db_user, field, value)
     

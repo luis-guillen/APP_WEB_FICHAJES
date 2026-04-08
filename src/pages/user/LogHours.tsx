@@ -31,7 +31,6 @@ export default function LogHours() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [projectId, setProjectId] = useState("");
-  const [roleInProject] = useState<string>(user?.role || "");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isHoliday, setIsHoliday] = useState(false);
   const [taskCode, setTaskCode] = useState("");
@@ -52,6 +51,12 @@ export default function LogHours() {
   });
 
   const selectedProject = allProjects.find(p => p.id === projectId);
+
+  const roleInProject = useMemo(() => {
+    if (!selectedProject || !user) return user?.role || "";
+    const assignment = selectedProject.assigned_users?.find((su: any) => su.user_id === user.id);
+    return assignment ? assignment.role : (user.role || "");
+  }, [selectedProject, user]);
 
   // Filter tasks using case- and accent-insensitive role comparison
   const filteredTasks = useMemo(
@@ -159,9 +164,12 @@ export default function LogHours() {
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger><SelectValue placeholder="Elige un proyecto" /></SelectTrigger>
                 <SelectContent>
-                  {allProjects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
-                  ))}
+                  {allProjects.map(p => {
+                    const r = p.assigned_users?.find((su: any) => su.user_id === user?.id)?.role || user?.role;
+                    return (
+                      <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name} {r ? `(${r})` : ""}</SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
               <Button disabled={!projectId} onClick={() => setStep(2)} className="w-full">Siguiente</Button>

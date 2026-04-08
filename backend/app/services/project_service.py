@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from typing import List
 
 from app.models.project import Project
-from app.models.project_user import project_user_table
+from app.models.project_user import ProjectUser
 from app.models.user import User
 from app.schemas.project import ProjectCreate
 
@@ -30,11 +30,11 @@ def create_project(db: Session, project_in: ProjectCreate) -> Project:
         )
 
     # Buscar usuarios para adjuntar
-    assigned_users = []
-    if project_in.assigned_user_ids:
-        assigned_users = db.query(User).filter(User.id.in_(project_in.assigned_user_ids)).all()
+    assigned_user_ids = [u.user_id for u in project_in.assigned_users]
+    if assigned_user_ids:
+        found_users = db.query(User).filter(User.id.in_(assigned_user_ids)).all()
         # Verificar si mandó IDs que no existen
-        if len(assigned_users) != len(project_in.assigned_user_ids):
+        if len(found_users) != len(assigned_user_ids):
             raise HTTPException(
                  status_code=status.HTTP_404_NOT_FOUND,
                  detail="One or more assigned user IDs do not exist"
@@ -47,11 +47,15 @@ def create_project(db: Session, project_in: ProjectCreate) -> Project:
         distance_from_workshop=project_in.distance_from_workshop,
         travel_time=(project_in.travel_time or 0) * 2, # x2 para ida+vuelta
         start_date=project_in.start_date,
-        type=project_in.type,
-        users=assigned_users
+        type=project_in.type
     )
 
     db.add(db_project)
+    db.flush()
+
+    for mapping in project_in.assigned_users:
+        assoc = ProjectUser(project_id=db_project.id, user_id=mapping.user_id, role=mapping.role)
+        db.add(assoc)
     db.commit()
     db.refresh(db_project)
     return db_project
@@ -74,7 +78,7 @@ def list_projects(db: Session, skip: int = 0, limit: int = 100) -> List[Project]
 
 def list_projects_for_user(db: Session, user_id: str) -> List[Project]:
     return db.query(Project).filter(
-        (Project.users.any(User.id == user_id) | (Project.type == 'non-productive')),
+        (Project.user_associations.any(ProjectUser.user_id == user_id) | (Project.type == 'non-productive')),
         Project.deleted_at == None
     ).all()
 
@@ -87,10 +91,15 @@ def assign_user_to_project(db: Session, project_id: str, user_id: str):
     if not user:
          raise HTTPException(status_code=404, detail="User not found")
          
-    if user in project.users:
+    # Find existing mapping
+    existing = db.query(ProjectUser).filter_by(project_id=project_id, user_id=user_id).first()
+    if existing:
         raise HTTPException(status_code=409, detail="User is already assigned to this project")
 
-    project.users.append(user)
+    # To support assigning a role dynamically in the assign_user_to_project router, we might need a role.
+    # Currently the router has no role param, so we fallback to user's general role
+    assoc = ProjectUser(project_id=project_id, user_id=user_id, role=user.role)
+    db.add(assoc)
     db.commit()
     return True
 
@@ -99,11 +108,11 @@ def unassign_user_from_project(db: Session, project_id: str, user_id: str):
     if not project:
          raise HTTPException(status_code=404, detail="Project not found")
 
-    user = next((u for u in project.users if u.id == user_id), None)
-    if not user:
+    assoc = db.query(ProjectUser).filter_by(project_id=project_id, user_id=user_id).first()
+    if not assoc:
          raise HTTPException(status_code=404, detail="User is not assigned to this project")
 
-    project.users.remove(user)
+    db.delete(assoc)
     db.commit()
     return True
 

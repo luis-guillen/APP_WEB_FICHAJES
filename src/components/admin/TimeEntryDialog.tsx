@@ -78,7 +78,7 @@ export function TimeEntryDialog({
         if (!formData.project_id) return users;
         const selectedProject = projects.find(p => p.id === formData.project_id);
         if (!selectedProject) return users;
-        return users.filter(u => selectedProject.assigned_user_ids?.includes(u.id));
+        return users.filter(u => selectedProject.assigned_users?.some((su: any) => su.user_id === u.id));
     }, [users, projects, formData.project_id]);
 
     const handleSave = async () => {

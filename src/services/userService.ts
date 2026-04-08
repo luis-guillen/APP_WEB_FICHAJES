@@ -1,11 +1,22 @@
 import { fetchApi } from './api';
 
+export interface AssignedProjectRole {
+    project_id: string;
+    project_name: string;
+    project_code: string;
+    role: string;
+}
+
 export interface UserResponse {
     id: string;
     employee_code: string;
     name: string;
-    home_location: string;
+    home_location?: string;
     role: string;
+    is_admin: boolean;
+    active: boolean;
+    created_at: string;
+    assigned_projects: AssignedProjectRole[];
 }
 
 export const userService = {

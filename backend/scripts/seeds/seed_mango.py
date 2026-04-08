@@ -101,9 +101,11 @@ try:
     db.flush()
     
     print("Assigning all users to project MANGO...")
+    from app.models.project_user import ProjectUser
     for user in new_users:
         if user not in mango_project.users:
-            mango_project.users.append(user)
+            assoc = ProjectUser(project_id=mango_project.id, user_id=user.id, role=user.role)
+            db.add(assoc)
             
     db.commit()
     

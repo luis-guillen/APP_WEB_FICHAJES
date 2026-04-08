@@ -1,6 +1,12 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
 from datetime import datetime
+from typing import Optional, List
+
+class AssignedProjectRole(BaseModel):
+    project_id: str
+    project_name: str
+    project_code: str
+    role: str
 
 class UserBase(BaseModel):
     employee_code: str
@@ -23,4 +29,6 @@ class UserResponse(UserBase):
     id: str
     is_admin: bool
     created_at: datetime
+    assigned_projects: List[AssignedProjectRole] = []
+    
     model_config = ConfigDict(from_attributes=True)

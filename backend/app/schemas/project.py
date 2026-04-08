@@ -2,6 +2,10 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import date
 
+class ProjectUserAssignment(BaseModel):
+    user_id: str
+    role: str
+
 class ProjectBase(BaseModel):
     name: str
     code: str
@@ -12,10 +16,13 @@ class ProjectBase(BaseModel):
     type: str
 
 class ProjectCreate(ProjectBase):
-    assigned_user_ids: List[str] = []
+    # En la creación esperamos una lista de dicts
+    assigned_users: List[ProjectUserAssignment] = []
 
 class ProjectResponse(ProjectBase):
     id: str
     is_active: bool
-    assigned_user_ids: List[str] = []
+    # Modificamos la respuesta para mostrar usuarios con sus roles
+    assigned_users: List[ProjectUserAssignment] = []
+    
     model_config = ConfigDict(from_attributes=True)

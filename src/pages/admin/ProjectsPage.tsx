@@ -55,8 +55,13 @@ export default function ProjectsPage() {
   const [travelTime, setTravelTime] = useState("0");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [assignAll, setAssignAll] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role: string}[]>([]);
   const [projectType, setProjectType] = useState<"standard" | "offer" | "non-productive">("standard");
+  
+  const ROLES = [
+    "PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS",
+    "PROGRAMADORES", "MONTADORES", "MANAGEMENT", "ADMIN"
+  ];
 
   const handleCreate = () => {
     if (!name || !code) return;
@@ -67,7 +72,7 @@ export default function ProjectsPage() {
       distance_from_workshop: parseFloat(distance) || 0,
       travel_time: parseInt(travelTime) || 0,
       start_date: startDate,
-      assigned_user_ids: assignAll ? users.map(u => u.id) : selectedUsers,
+      assigned_users: assignAll ? users.map((u: any) => ({ user_id: u.id, role: u.role })) : selectedUsers,
       type: projectType,
     });
   };
@@ -76,8 +81,17 @@ export default function ProjectsPage() {
     deleteMutation.mutate(id);
   };
 
-  const toggleUser = (uid: string) => {
-    setSelectedUsers(prev => prev.includes(uid) ? prev.filter(x => x !== uid) : [...prev, uid]);
+  const toggleUser = (u: any) => {
+    setSelectedUsers(prev => {
+      if (prev.some(x => x.user_id === u.id)) {
+        return prev.filter(x => x.user_id !== u.id);
+      }
+      return [...prev, { user_id: u.id, role: u.role }];
+    });
+  };
+
+  const updateRole = (uid: string, role: string) => {
+    setSelectedUsers(prev => prev.map(x => x.user_id === uid ? { ...x, role } : x));
   };
 
   return (
@@ -120,17 +134,26 @@ export default function ProjectsPage() {
               {!assignAll && (
                 <div className="space-y-1">
                   <Label>Asignar Usuarios</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {users.map(u => (
-                      <Badge
-                        key={u.id}
-                        variant={selectedUsers.includes(u.id) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => toggleUser(u.id)}
-                      >
-                        {u.name}
-                      </Badge>
-                    ))}
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
+                    {users.map((u: any) => {
+                      const sel = selectedUsers.find(su => su.user_id === u.id);
+                      return (
+                        <div key={u.id} className="flex items-center gap-2 border rounded min-h-9 px-2">
+                           <Switch checked={!!sel} onCheckedChange={() => toggleUser(u)} />
+                           <span className="text-sm flex-1">{u.name}</span>
+                           {sel && (
+                             <Select value={sel.role} onValueChange={(val) => updateRole(u.id, val)}>
+                                <SelectTrigger className="h-7 text-xs w-[180px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                   {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                           )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

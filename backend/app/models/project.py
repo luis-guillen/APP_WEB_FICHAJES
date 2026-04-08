@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Boolean, Numeric, Date, DateTime, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from . import Base, generate_uuid
-from .project_user import project_user_table
+from .project_user import ProjectUser
 
 class Project(Base):
     __tablename__ = "projects"
@@ -19,9 +19,13 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True) # Soft delete Column
 
-    users = relationship("User", secondary=project_user_table, back_populates="projects")
+    user_associations = relationship("ProjectUser", back_populates="project", cascade="all, delete-orphan")
     time_entries = relationship("TimeEntry", back_populates="project")
 
     @property
-    def assigned_user_ids(self) -> list[str]:
-        return [u.id for u in self.users]
+    def users(self):
+        return [assoc.user for assoc in self.user_associations]
+
+    @property
+    def assigned_users(self) -> list[dict]:
+        return [{"user_id": assoc.user_id, "role": assoc.role} for assoc in self.user_associations]

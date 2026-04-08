@@ -1,5 +1,10 @@
 import { fetchApi } from './api';
 
+export interface ProjectUserAssignment {
+    user_id: string;
+    role: string;
+}
+
 export interface ProjectCreate {
     name: string;
     code: string;
@@ -8,7 +13,7 @@ export interface ProjectCreate {
     travel_time?: number; // minutos de ida (el backend lo multiplica x2)
     start_date: string;
     type: string;
-    assigned_user_ids: string[];
+    assigned_users: ProjectUserAssignment[];
 }
 
 export interface ProjectResponse {
@@ -21,7 +26,7 @@ export interface ProjectResponse {
     start_date: string;
     type: string;
     is_active: boolean;
-    assigned_user_ids: string[];
+    assigned_users: ProjectUserAssignment[];
 }
 
 export const projectService = {

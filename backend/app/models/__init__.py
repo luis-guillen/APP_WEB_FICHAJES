@@ -6,7 +6,7 @@ Base = declarative_base()
 def generate_uuid():
     return str(uuid.uuid4())
 
-from .project_user import project_user_table
+from .project_user import ProjectUser
 from .user import User
 from .project import Project
 from .task import Task

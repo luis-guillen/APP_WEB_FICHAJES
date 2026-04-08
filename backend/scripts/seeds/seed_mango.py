@@ -61,23 +61,34 @@ try:
     db.add(mango_project)
     db.flush() # get ID
     
-    print("Creating 8 new Employees...")
+    print("Creating 20 new Employees...")
     emp_data = [
-        {"name": "Antonio Merino", "role": "PROYECTISTAS MECANICOS"},
-        {"name": "Gemma", "role": "PROYECTISTAS ELECTRICOS"},
-        {"name": "Antonio Silva", "role": "PROGRAMADORES"},
-        {"name": "Ernesto Soriano", "role": "PROYECTISTAS MECANICOS"},
-        {"name": "Kevin Soriano", "role": "PROYECTISTAS ELECTRICOS"},
-        {"name": "Pablo Cabaleiro", "role": "PROGRAMADORES"},
-        {"name": "CATHAYSA", "role": "MONTADORES"},
-        {"name": "Arnau", "role": "MONTADORES"},
+        {"name": "Manolo Salamanca", "role": "PROYECTISTAS MECANICOS", "user": "manolosal"},
+        {"name": "Alberto Reyes", "role": "PROYECTISTAS ELECTRICOS", "user": "albertorey"},
+        {"name": "Francisco Reyes", "role": "PROGRAMADORES", "user": "franciscorey"},
+        {"name": "Jonathan Moral", "role": "MONTADORES", "user": "jonathanmor"},
+        {"name": "Antonio Valverde", "role": "PROYECTISTAS MECANICOS", "user": "antonioval"},
+        {"name": "Alberto Hernandez", "role": "PROYECTISTAS ELECTRICOS", "user": "albertoher"},
+        {"name": "Gemma Piñol", "role": "PROGRAMADORES", "user": "gemmapin"},
+        {"name": "Antonio Silva", "role": "MONTADORES", "user": "antoniosil"},
+        {"name": "Arnau Anillo", "role": "PROYECTISTAS MECANICOS", "user": "arnauani"},
+        {"name": "Xavier Castillo", "role": "PROYECTISTAS ELECTRICOS", "user": "xaviercas"},
+        {"name": "Ivan de los Rios", "role": "PROGRAMADORES", "user": "ivandelo"},
+        {"name": "Mario García", "role": "MONTADORES", "user": "mariogar"},
+        {"name": "Jesus Utrero", "role": "PROYECTISTAS MECANICOS", "user": "jesusutr"},
+        {"name": "Marco Murillo", "role": "PROYECTISTAS ELECTRICOS", "user": "marcomur"},
+        {"name": "Jhonatan Juan Yance", "role": "PROGRAMADORES", "user": "jhonatanjan"},
+        {"name": "David Ferrari", "role": "MONTADORES", "user": "davidfer"},
+        {"name": "Dani Caro", "role": "PROYECTISTAS MECANICOS", "user": "danicar"},
+        {"name": "Antonio Merino", "role": "PROYECTISTAS ELECTRICOS", "user": "antoniomer"},
+        {"name": "Sergio García", "role": "PROGRAMADORES", "user": "sergiogar"},
+        {"name": "Carlos Gonzalez", "role": "MONTADORES", "user": "carlosgon"},
     ]
     
     new_users = []
-    base_code = 1001
     for data in emp_data:
         new_u = User(
-            employee_code=str(base_code),
+            employee_code=data["user"],
             name=data["name"],
             home_location=get_random_home_location(),
             role=data["role"],
@@ -85,7 +96,6 @@ try:
         )
         db.add(new_u)
         new_users.append(new_u)
-        base_code += 1
         
     db.flush()
     

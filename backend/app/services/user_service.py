@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 from app.auth.security import get_password_hash
 from app.services.audit_service import log_event
 
@@ -58,3 +58,30 @@ def delete_user(db: Session, user_id: str, actor_id: str | None = None) -> bool:
     
     db.commit()
     return True
+def update_user(db: Session, user_id: str, user_in: UserUpdate, actor_id: str | None = None) -> User:
+    db_user = get_user_by_id(db, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = user_in.model_dump(exclude_unset=True)
+    
+    if "role" in update_data:
+        allowed_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management", "Admin"]
+        if update_data["role"] not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Role must be one of: {allowed_roles}"
+            )
+            
+    if "password" in update_data:
+        db_user.password_hash = get_password_hash(update_data.pop("password"))
+        
+    for field, value in update_data.items():
+        setattr(db_user, field, value)
+    
+    db.add(db_user)
+    log_event(db, actor_id, "User", user_id, "UPDATE", changes=update_data)
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user

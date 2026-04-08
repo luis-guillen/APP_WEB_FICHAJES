@@ -2,11 +2,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
+
 from app.services import user_service
 from app.auth.dependencies import require_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+@router.put("/{user_id}", response_model=UserResponse)
+def update_existing_user(user_id: str, user: UserUpdate, db: Session = Depends(get_db), current_user = Depends(require_admin)):
+    """Actualiza un usuario. (Requiere permisos de Admin)"""
+    return user_service.update_user(db=db, user_id=user_id, user_in=user, actor_id=current_user.id)
 
 @router.get("/", response_model=list[UserResponse])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user = Depends(require_admin)):

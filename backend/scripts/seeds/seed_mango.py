@@ -54,6 +54,7 @@ try:
         name="MANGO",
         location="Avenida Can Montcau, 6, 08186 Lliçà d'Amunt, Barcelona",
         distance_from_workshop=45.5, 
+        travel_time=90, # 45 min ida + 45 min vuelta
         start_date=date(2026, 3, 1),
         type="standard",
         is_active=True

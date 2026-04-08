@@ -19,10 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('projects', sa.Column('travel_time_to', sa.Integer(), nullable=True, server_default='0'))
-    op.add_column('projects', sa.Column('travel_time_from', sa.Integer(), nullable=True, server_default='0'))
+    op.add_column('projects', sa.Column('travel_time', sa.Integer(), nullable=True, server_default='0'))
 
 
 def downgrade() -> None:
-    op.drop_column('projects', 'travel_time_from')
-    op.drop_column('projects', 'travel_time_to')
+    op.drop_column('projects', 'travel_time')

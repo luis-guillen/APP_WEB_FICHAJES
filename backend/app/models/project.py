@@ -12,8 +12,7 @@ class Project(Base):
     code = Column(String(50), unique=True, nullable=False, index=True)
     location = Column(String(255), nullable=True)
     distance_from_workshop = Column(Numeric(8, 2), default=0.0)
-    travel_time_to = Column(Integer, default=0, nullable=True)    # minutos de ida
-    travel_time_from = Column(Integer, default=0, nullable=True)  # minutos de vuelta
+    travel_time = Column(Integer, default=0, nullable=True) # tiempo total ida+vuelta (minutos)
     start_date = Column(Date, nullable=False)
     type = Column(String(20), nullable=False)
     is_active = Column(Boolean, default=True)
@@ -22,3 +21,7 @@ class Project(Base):
 
     users = relationship("User", secondary=project_user_table, back_populates="projects")
     time_entries = relationship("TimeEntry", back_populates="project")
+
+    @property
+    def assigned_user_ids(self) -> list[str]:
+        return [u.id for u in self.users]

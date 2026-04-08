@@ -31,7 +31,7 @@ export default function ProjectsPage() {
       queryClient.invalidateQueries({ queryKey: ["adminProjects"] });
       toast.success("Proyecto creado");
       setName(""); setCode(""); setLocation(""); setDistance("0");
-      setTravelTo("0"); setTravelFrom("0");
+      setTravelTime("0");
       setSelectedUsers([]); setAssignAll(false); setProjectType("standard");
       setOpen(false);
     },
@@ -52,8 +52,7 @@ export default function ProjectsPage() {
   const [code, setCode] = useState("");
   const [location, setLocation] = useState("");
   const [distance, setDistance] = useState("0");
-  const [travelTo, setTravelTo] = useState("0");
-  const [travelFrom, setTravelFrom] = useState("0");
+  const [travelTime, setTravelTime] = useState("0");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [assignAll, setAssignAll] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -66,8 +65,7 @@ export default function ProjectsPage() {
       code,
       location,
       distance_from_workshop: parseFloat(distance) || 0,
-      travel_time_to: parseInt(travelTo) || 0,
-      travel_time_from: parseInt(travelFrom) || 0,
+      travel_time: parseInt(travelTime) || 0,
       start_date: startDate,
       assigned_user_ids: assignAll ? users.map(u => u.id) : selectedUsers,
       type: projectType,
@@ -110,10 +108,9 @@ export default function ProjectsPage() {
               <div><Label>Nombre del Proyecto</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
               <div><Label>Código del Proyecto</Label><Input value={code} onChange={e => setCode(e.target.value)} placeholder={projectType === "non-productive" ? "000" : ""} /></div>
               <div><Label>Ubicación</Label><Input value={location} onChange={e => setLocation(e.target.value)} /></div>
-              <div><Label>Distancia desde el taller (km)</Label><Input type="number" value={distance} onChange={e => setDistance(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Tiempo de ida (min)</Label><Input type="number" min="0" value={travelTo} onChange={e => setTravelTo(e.target.value)} /></div>
-                <div><Label>Tiempo de vuelta (min)</Label><Input type="number" min="0" value={travelFrom} onChange={e => setTravelFrom(e.target.value)} /></div>
+                <div><Label>Distancia taller (km)</Label><Input type="number" value={distance} onChange={e => setDistance(e.target.value)} /></div>
+                <div><Label>Tiempo trayecto (ida, min)</Label><Input type="number" min="0" value={travelTime} onChange={e => setTravelTime(e.target.value)} /></div>
               </div>
               <div><Label>Fecha de inicio</Label><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
               <div className="flex items-center gap-3">
@@ -162,8 +159,8 @@ export default function ProjectsPage() {
             <div className="flex gap-2 flex-wrap">
               <span className="text-xs bg-muted rounded px-2 py-0.5">{TYPE_LABELS[p.type] || p.type}</span>
               <span className="text-xs text-muted-foreground">{p.start_date}</span>
-              {((p.travel_time_to || 0) > 0 || (p.travel_time_from || 0) > 0) && (
-                <span className="text-xs text-muted-foreground">↑{p.travel_time_to ?? 0}′ ↓{p.travel_time_from ?? 0}′</span>
+              {(p.travel_time || 0) > 0 && (
+                <span className="text-xs text-muted-foreground">Viaje: {p.travel_time}′</span>
               )}
             </div>
           </div>
@@ -194,9 +191,7 @@ export default function ProjectsPage() {
                   <TableCell>{TYPE_LABELS[p.type] || p.type}</TableCell>
                   <TableCell>{p.start_date}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {(p.travel_time_to || 0) > 0 || (p.travel_time_from || 0) > 0
-                      ? `↑${p.travel_time_to ?? 0}′ ↓${p.travel_time_from ?? 0}′`
-                      : "—"}
+                    {(p.travel_time || 0) > 0 ? `${p.travel_time}′` : "—"}
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>

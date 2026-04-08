@@ -5,8 +5,7 @@ export interface ProjectCreate {
     code: string;
     location?: string;
     distance_from_workshop: number;
-    travel_time_to?: number;   // minutos de ida
-    travel_time_from?: number; // minutos de vuelta
+    travel_time?: number; // minutos de ida (el backend lo multiplica x2)
     start_date: string;
     type: string;
     assigned_user_ids: string[];
@@ -18,11 +17,11 @@ export interface ProjectResponse {
     code: string;
     location?: string;
     distance_from_workshop: number;
-    travel_time_to?: number;   // minutos de ida
-    travel_time_from?: number; // minutos de vuelta
+    travel_time?: number; // tiempo total ida+vuelta
     start_date: string;
     type: string;
     is_active: boolean;
+    assigned_user_ids: string[];
 }
 
 export const projectService = {

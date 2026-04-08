@@ -12,6 +12,13 @@ class UserCreate(UserBase):
     password: str
     is_admin: Optional[bool] = False
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    home_location: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+    is_admin: Optional[bool] = None
+
 class UserResponse(UserBase):
     id: str
     is_admin: bool

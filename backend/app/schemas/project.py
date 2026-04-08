@@ -7,8 +7,7 @@ class ProjectBase(BaseModel):
     code: str
     location: Optional[str] = None
     distance_from_workshop: float = 0.0
-    travel_time_to: Optional[int] = 0    # minutos de ida
-    travel_time_from: Optional[int] = 0  # minutos de vuelta
+    travel_time: Optional[int] = 0           # minutos de ida (el servicio lo multiplicará x2)
     start_date: date
     type: str
 
@@ -18,4 +17,5 @@ class ProjectCreate(ProjectBase):
 class ProjectResponse(ProjectBase):
     id: str
     is_active: bool
+    assigned_user_ids: List[str] = []
     model_config = ConfigDict(from_attributes=True)

@@ -19,8 +19,7 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         TimeEntry.trip_type,
         TimeEntry.meals,
         Project.distance_from_workshop.label("project_distance"),
-        Project.travel_time_to.label("proj_travel_time_to"),
-        Project.travel_time_from.label("proj_travel_time_from")
+        Project.travel_time.label("proj_travel_time")
     ).join(User, TimeEntry.user_id == User.id)\
      .join(Task, TimeEntry.task_id == Task.id)\
      .join(Project, TimeEntry.project_id == Project.id)
@@ -91,16 +90,13 @@ def get_analytics_summary(db: Session, **filters) -> dict:
              logistics[u]["company"] += float(e.project_distance or 0) * mult
 
         # 8. Travel time (minutos → acumulado por usuario)
-        if e.vehicle_type:
+        if e.vehicle_type and e.proj_travel_time:
             mins = 0
-            tt_to = int(e.proj_travel_time_to or 0)
-            tt_from = int(e.proj_travel_time_from or 0)
+            tt_total = int(e.proj_travel_time)
             if e.trip_type == "round":
-                mins = tt_to + tt_from
-            elif e.trip_type == "to":
-                mins = tt_to
-            elif e.trip_type == "from":
-                mins = tt_from
+                mins = tt_total
+            else:
+                mins = tt_total // 2 # ida o vuelta por separado
             travel_by_user[u] = travel_by_user.get(u, 0) + mins
 
         # 9. Dietas

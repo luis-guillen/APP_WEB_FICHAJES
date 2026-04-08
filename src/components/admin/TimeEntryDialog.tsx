@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Dialog,
     DialogContent,
@@ -61,7 +61,7 @@ export function TimeEntryDialog({
                 vehicle_type: entry.vehicle_type || "",
                 meals: entry.meals || false,
                 distance_origin: entry.distance_origin || "",
-                trip_type: entry.trip_type || "",
+                trip_type: entry.trip_type || "round",
             });
         } else {
             setFormData({
@@ -69,9 +69,17 @@ export function TimeEntryDialog({
                 hours: 0,
                 overtime_hours: 0,
                 is_holiday: false,
+                trip_type: "round",
             });
         }
     }, [entry, open]);
+
+    const filteredUsers = useMemo(() => {
+        if (!formData.project_id) return users;
+        const selectedProject = projects.find(p => p.id === formData.project_id);
+        if (!selectedProject) return users;
+        return users.filter(u => selectedProject.assigned_user_ids?.includes(u.id));
+    }, [users, projects, formData.project_id]);
 
     const handleSave = async () => {
         if (!formData.user_id || !formData.project_id || !formData.task_id) {
@@ -99,17 +107,17 @@ export function TimeEntryDialog({
                 <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Usuario</Label>
+                            <Label>Proyecto</Label>
                             <Select
-                                value={formData.user_id}
-                                onValueChange={(val) => setFormData({ ...formData, user_id: val })}
+                                value={formData.project_id}
+                                onValueChange={(val) => setFormData({ ...formData, project_id: val, user_id: "" })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar usuario" />
+                                    <SelectValue placeholder="Seleccionar proyecto" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {users.map(u => (
-                                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                    {projects.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -126,17 +134,18 @@ export function TimeEntryDialog({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Proyecto</Label>
+                            <Label>Usuario</Label>
                             <Select
-                                value={formData.project_id}
-                                onValueChange={(val) => setFormData({ ...formData, project_id: val })}
+                                value={formData.user_id}
+                                onValueChange={(val) => setFormData({ ...formData, user_id: val })}
+                                disabled={!formData.project_id}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar proyecto" />
+                                    <SelectValue placeholder={formData.project_id ? "Seleccionar usuario" : "Primero elige un proyecto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {projects.map(p => (
-                                        <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
+                                    {filteredUsers.map(u => (
+                                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -197,7 +206,11 @@ export function TimeEntryDialog({
                                 <Label>Vehículo</Label>
                                 <Select
                                     value={formData.vehicle_type || "none"}
-                                    onValueChange={(val) => setFormData({ ...formData, vehicle_type: val === "none" ? undefined : val })}
+                                    onValueChange={(val) => setFormData({ 
+                                        ...formData, 
+                                        vehicle_type: val === "none" ? undefined : val,
+                                        trip_type: val === "none" ? undefined : "round"
+                                    })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Tipo de vehículo" />
@@ -207,21 +220,6 @@ export function TimeEntryDialog({
                                         <SelectItem value="coche_personal">Coche particular</SelectItem>
                                         <SelectItem value="moto_personal">Moto particular</SelectItem>
                                         <SelectItem value="company">Vehículo de empresa</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Trayecto</Label>
-                                <Select
-                                    value={formData.trip_type || "none"}
-                                    onValueChange={(val) => setFormData({ ...formData, trip_type: val === "none" ? undefined : val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Tipo de trayecto" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Solo Ida</SelectItem>
-                                        <SelectItem value="round">Ida y Vuelta</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

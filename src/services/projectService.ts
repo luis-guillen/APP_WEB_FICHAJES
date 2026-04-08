@@ -45,6 +45,13 @@ export const projectService = {
         });
     },
 
+    updateProject: async (id: string, projectData: Partial<ProjectCreate>): Promise<ProjectResponse> => {
+        return fetchApi<ProjectResponse>(`/projects/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(projectData),
+        });
+    },
+
     deleteProject: async (id: string): Promise<void> => {
         return fetchApi<void>(`/projects/${id}`, {
             method: 'DELETE',

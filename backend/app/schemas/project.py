@@ -19,6 +19,16 @@ class ProjectCreate(ProjectBase):
     # En la creación esperamos una lista de dicts
     assigned_users: List[ProjectUserAssignment] = []
 
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    location: Optional[str] = None
+    distance_from_workshop: Optional[float] = None
+    travel_time: Optional[int] = None
+    start_date: Optional[date] = None
+    type: Optional[str] = None
+    assigned_users: Optional[List[ProjectUserAssignment]] = None
+
 class ProjectResponse(ProjectBase):
     id: str
     is_active: bool

@@ -81,6 +81,22 @@ export function TimeEntryDialog({
         return users.filter(u => selectedProject.assigned_users?.some((su: any) => su.user_id === u.id));
     }, [users, projects, formData.project_id]);
 
+    const filteredTasks = useMemo(() => {
+        if (!formData.project_id || !formData.user_id) return tasks;
+        const selectedProject = projects.find(p => p.id === formData.project_id);
+        const userProjectAssignment = selectedProject?.assigned_users?.find((su: any) => su.user_id === formData.user_id);
+        const user = users.find(u => u.id === formData.user_id);
+        const role = userProjectAssignment?.role || user?.role || "";
+        
+        if (!role) return [];
+        return tasks
+            .filter(t => 
+                t.allowed_roles.length === 0 || 
+                t.allowed_roles.some((r: string) => r.localeCompare(role, "es", { sensitivity: "base" }) === 0)
+            )
+            .sort((a, b) => a.code.localeCompare(b.code));
+    }, [tasks, formData.project_id, formData.user_id, projects, users]);
+
     const handleSave = async () => {
         if (!formData.user_id || !formData.project_id || !formData.task_id) {
             return;
@@ -160,9 +176,13 @@ export function TimeEntryDialog({
                                     <SelectValue placeholder="Seleccionar tarea" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {tasks.map(t => (
-                                        <SelectItem key={t.id} value={t.id}>{t.code} - {t.name}</SelectItem>
-                                    ))}
+                                    {filteredTasks.length === 0 && formData.user_id ? (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">Sin tareas para el rol de este usuario</div>
+                                    ) : (
+                                        filteredTasks.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.code} - {t.name}</SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>

@@ -116,6 +116,41 @@ def unassign_user_from_project(db: Session, project_id: str, user_id: str):
     db.commit()
     return True
 
+def update_project(db: Session, project_id: str, project_in: dict) -> Project:
+    db_project = get_project_by_id(db, project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if "code" in project_in and project_in["code"] != db_project.code:
+        if get_project_by_code(db, code=project_in["code"]):
+            raise HTTPException(status_code=409, detail="Project code already exists")
+
+    if "type" in project_in:
+        allowed_types = ["standard", "offer", "non-productive"]
+        if project_in["type"] not in allowed_types:
+            raise HTTPException(status_code=400, detail=f"Project type must be: {allowed_types}")
+
+    assigned_users = project_in.pop("assigned_users", None)
+    
+    # Update project fields
+    if "travel_time" in project_in:
+        project_in["travel_time"] = (project_in["travel_time"] or 0) * 2
+
+    for field, value in project_in.items():
+        setattr(db_project, field, value)
+        
+    if assigned_users is not None:
+        # Sync assignments
+        db.query(ProjectUser).filter(ProjectUser.project_id == project_id).delete()
+        for mapping in assigned_users:
+            assoc = ProjectUser(project_id=project_id, user_id=mapping["user_id"], role=mapping["role"])
+            db.add(assoc)
+
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
 def get_users_for_project(db: Session, project_id: str) -> List[User]:
     project = get_project_by_id(db, project_id)
     if not project:

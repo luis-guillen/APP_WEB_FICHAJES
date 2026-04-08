@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { FolderKanban, Plus, Trash2 } from "lucide-react";
+import { FolderKanban, Plus, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -38,6 +38,17 @@ export default function ProjectsPage() {
     onError: () => toast.error("Error al crear proyecto"),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => projectService.updateProject(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminProjects"] });
+      toast.success("Proyecto actualizado");
+      setOpen(false);
+      resetForm();
+    },
+    onError: () => toast.error("Error al actualizar proyecto"),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: projectService.deleteProject,
     onSuccess: () => {
@@ -48,6 +59,7 @@ export default function ProjectsPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [location, setLocation] = useState("");
@@ -57,24 +69,53 @@ export default function ProjectsPage() {
   const [assignAll, setAssignAll] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role: string}[]>([]);
   const [projectType, setProjectType] = useState<"standard" | "offer" | "non-productive">("standard");
+
+  const resetForm = () => {
+    setEditingProjectId(null);
+    setName(""); setCode(""); setLocation(""); setDistance("0"); setTravelTime("0");
+    setStartDate(new Date().toISOString().split("T")[0]);
+    setSelectedUsers([]); setAssignAll(false); setProjectType("standard");
+  };
+
+  const nonAdminUsers = users.filter((u: any) => u.role !== "Admin" && u.role !== "Management");
   
   const ROLES = [
     "PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS",
     "PROGRAMADORES", "MONTADORES", "MANAGEMENT", "ADMIN"
   ];
 
-  const handleCreate = () => {
+  const handleSave = () => {
     if (!name || !code) return;
-    createMutation.mutate({
+    const payload = {
       name,
       code,
       location,
       distance_from_workshop: parseFloat(distance) || 0,
       travel_time: parseInt(travelTime) || 0,
       start_date: startDate,
-      assigned_users: assignAll ? users.map((u: any) => ({ user_id: u.id, role: u.role })) : selectedUsers,
+      assigned_users: assignAll ? nonAdminUsers.map((u: any) => ({ user_id: u.id, role: u.role })) : selectedUsers,
       type: projectType,
-    });
+    };
+
+    if (editingProjectId) {
+      updateMutation.mutate({ id: editingProjectId, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
+
+  const handleOpenEdit = (p: any) => {
+    setEditingProjectId(p.id);
+    setName(p.name);
+    setCode(p.code);
+    setLocation(p.location || "");
+    setDistance(p.distance_from_workshop?.toString() || "0");
+    setTravelTime(((p.travel_time || 0) / 2).toString()); // Mostrar solo ida
+    setStartDate(p.start_date);
+    setProjectType(p.type);
+    setSelectedUsers(p.assigned_users || []);
+    setAssignAll(false);
+    setOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -101,12 +142,12 @@ export default function ProjectsPage() {
           <FolderKanban className="h-5 w-5 text-primary shrink-0" />
           <h1 className="text-2xl font-semibold">Proyectos</h1>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 w-full sm:w-auto"><Plus className="h-4 w-4" />Añadir Proyecto</Button>
+            <Button size="sm" className="gap-1.5 w-full sm:w-auto" onClick={() => resetForm()}><Plus className="h-4 w-4" />Añadir Proyecto</Button>
           </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Crear Proyecto</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingProjectId ? "Editar Proyecto" : "Crear Proyecto"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
                 <Label>Tipo</Label>
@@ -135,7 +176,7 @@ export default function ProjectsPage() {
                 <div className="space-y-1">
                   <Label>Asignar Usuarios</Label>
                   <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
-                    {users.map((u: any) => {
+                    {nonAdminUsers.map((u: any) => {
                       const sel = selectedUsers.find(su => su.user_id === u.id);
                       return (
                         <div key={u.id} className="flex items-center gap-2 border rounded min-h-9 px-2">
@@ -157,7 +198,7 @@ export default function ProjectsPage() {
                   </div>
                 </div>
               )}
-              <Button onClick={handleCreate} className="w-full">Crear Proyecto</Button>
+               <Button onClick={handleSave} className="w-full">{editingProjectId ? "Actualizar Proyecto" : "Crear Proyecto"}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -175,9 +216,14 @@ export default function ProjectsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 truncate">{p.location || "—"}</p>
               </div>
+             <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleOpenEdit(p)}>
+                <Edit className="h-4 w-4 text-primary" />
+              </Button>
               <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" onClick={() => handleDelete(p.id)}>
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
+            </div>
             </div>
             <div className="flex gap-2 flex-wrap">
               <span className="text-xs bg-muted rounded px-2 py-0.5">{TYPE_LABELS[p.type] || p.type}</span>
@@ -216,10 +262,15 @@ export default function ProjectsPage() {
                   <TableCell className="text-muted-foreground text-xs">
                     {(p.travel_time || 0) > 0 ? `${p.travel_time}′` : "—"}
                   </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                   <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(p)}>
+                        <Edit className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

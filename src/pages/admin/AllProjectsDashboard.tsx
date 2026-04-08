@@ -119,7 +119,13 @@ export default function AllProjectsDashboard({
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <KPI label="Horas Totales" val={totalHours.toLocaleString("es-ES", { maximumFractionDigits: 1 })} unit="h" color={C.accent} sub="Todos los proyectos" />
+        <KPI 
+          label="Horas Totales" 
+          val={`${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m`} 
+          unit="" 
+          color={C.accent} 
+          sub="Todos los proyectos" 
+        />
         <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub="Registros totales" />
         <KPI label="Proyectos" val={projectTotals.length} unit="" color={C.catTaller} sub={`de ${projects.length} en el sistema`} />
         <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub={`${Math.round(totalKm * 0.19).toLocaleString("es-ES")}€ reembolso`} />

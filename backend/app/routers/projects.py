@@ -6,7 +6,7 @@ from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_admin
 from app.models.user import User
 
-from app.schemas.project import ProjectCreate, ProjectResponse
+from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.schemas.user import UserResponse
 from app.services import project_service
 
@@ -29,6 +29,10 @@ def list_all_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get
 def create_project(project: ProjectCreate, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Crea un proyecto. Solo administradores."""
     return project_service.create_project(db, project)
+@router.put("/{project_id}", response_model=ProjectResponse)
+def update_project(project_id: str, project: ProjectUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    """Actualiza un proyecto y sus asignaciones. Admin solo."""
+    return project_service.update_project(db, project_id, project.model_dump(exclude_unset=True))
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)

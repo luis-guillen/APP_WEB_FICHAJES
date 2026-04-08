@@ -280,12 +280,24 @@ export default function AdminDashboard() {
             <>
               {/* KPIs */}
               <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
-                <KPI label="Total Horas" val={totalHours.toLocaleString("es-ES", { maximumFractionDigits: 1 })} unit="h" color={C.accent} sub={`${employeeCount} empleados activos`} />
+                <KPI 
+                  label="Total Horas" 
+                  val={`${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m`} 
+                  unit="" 
+                  color={C.accent} 
+                  sub={`${employeeCount} empleados activos`} 
+                />
                 <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub={`Ø ${(totalEntries / Math.max(1, sortedDailySummary.length)).toFixed(1)} / día`} />
                 <KPI label="Empleados" val={employeeCount} unit="" color={C.green} sub="Con actividad" />
                 <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub="Reembolsables" />
                 <KPI label="Dietas SÍ" val={totalDietas} unit="" color={C.pink} sub="Solicitadas" />
-                <KPI label="H. en Viajes" val={totalTravelHours.toFixed(1)} unit="h" color={C.teal} sub="Desplazamientos acum." />
+                <KPI 
+                  label="H. en Viajes" 
+                  val={`${Math.floor(totalTravelHours)}h ${Math.round((totalTravelHours % 1) * 60)}m`} 
+                  unit="" 
+                  color={C.teal} 
+                  sub="Desplazamientos acum." 
+                />
               </div>
 
               {/* 01 – Heatmap */}
@@ -461,33 +473,6 @@ export default function AdminDashboard() {
                 </div>
               </CustomCard>
 
-              {/* 07 – KM */}
-              <Section num="07" title="KMs Reembolsables por Empleado"
-                sub="Vehículo particular. Reembolso calculado a 0,19€/km." />
-              <CustomCard>
-                {(summary?.logistics_km || []).some((k: any) => k.personal_km > 0) ? (
-                  <>
-                    <ResponsiveContainer width="100%" height={Math.max(160, (summary?.logistics_km?.filter((k: any) => k.personal_km > 0).length || 1) * 52)}>
-                      <BarChart
-                        data={[...(summary?.logistics_km || [])].filter((k: any) => k.personal_km > 0).sort((a: any, b: any) => a.personal_km - b.personal_km)}
-                        layout="vertical" barCategoryGap="25%"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
-                        <XAxis type="number" stroke={C.dim} fontSize={10} unit=" km" />
-                        <YAxis type="category" dataKey="name" stroke={C.dim} fontSize={12} width={140} />
-                        <Tooltip content={<Tip />} />
-                        <Bar dataKey="personal_km" name="KM Particular" fill={C.amber} fillOpacity={0.8} radius={[0, 6, 6, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <div style={{ marginTop: 10, padding: "10px 14px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 12, color: C.amber }}>Reembolso estimado (0,19€/km):</span>
-                      <span style={{ fontSize: 16, fontWeight: 800, color: C.amber }}>{(totalKm * 0.19).toFixed(0)}€</span>
-                    </div>
-                  </>
-                ) : (
-                  <p style={{ textAlign: "center", padding: "30px 0", color: C.dim }}>Sin desplazamientos en vehículo particular.</p>
-                )}
-              </CustomCard>
 
               {/* 08 – Dietas */}
               <Section num="08" title="Dietas por Empleado"
@@ -510,29 +495,6 @@ export default function AdminDashboard() {
                 )}
               </CustomCard>
 
-              {/* 09 – Treemap */}
-              <Section num="09" title="Treemap: Categoría → Tarea"
-                sub="Tamaño del bloque proporcional a las horas. Coloreado por categoría." />
-              <CustomCard>
-                {treemapFormatted.length > 0 ? (
-                  <>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <Treemap data={treemapFormatted} dataKey="size" nameKey="name"
-                        content={<TreemapCell />} animationDuration={300} />
-                    </ResponsiveContainer>
-                    <div style={{ display: "flex", gap: 20, marginTop: 12 }}>
-                      {[["Oficina/Diseño", C.catOficina], ["Planta Cliente", C.catPlanta], ["Taller", C.catTaller]].map(([n, c]) => (
-                        <div key={n} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 12, height: 12, borderRadius: 3, background: c }} />
-                          <span style={{ fontSize: 11, color: C.dim }}>{n}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p style={{ textAlign: "center", padding: "30px 0", color: C.dim }}>Sin datos de tareas.</p>
-                )}
-              </CustomCard>
 
               {/* 10 – Travel time by employee */}
               <Section num="10" title="Tiempo en Desplazamientos por Empleado"

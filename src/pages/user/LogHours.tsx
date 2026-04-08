@@ -31,7 +31,7 @@ export default function LogHours() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [projectId, setProjectId] = useState("");
-  const [roleInProject, setRoleInProject] = useState<string>("");
+  const [roleInProject] = useState<string>(user?.role || "");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isHoliday, setIsHoliday] = useState(false);
   const [taskCode, setTaskCode] = useState("");
@@ -71,7 +71,6 @@ export default function LogHours() {
   const reset = () => {
     setStep(1);
     setProjectId("");
-    setRoleInProject("");
     setDate(new Date().toISOString().split("T")[0]);
     setIsHoliday(false);
     setTaskCode("");
@@ -113,7 +112,6 @@ export default function LogHours() {
 
   const stepTitles = [
     "Seleccionar Proyecto",
-    "Seleccionar Rol",
     "Seleccionar Fecha",
     "¿Festivo?",
     "Seleccionar Tarea",
@@ -138,10 +136,21 @@ export default function LogHours() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Paso {step}: {step === 6 ? "Registro Final" : stepTitles[step - 1]}</CardTitle>
+          <CardTitle className="text-lg">
+            {allProjects.length === 0 
+              ? "Sin Proyectos Asignados" 
+              : `Paso ${step}: ${step === 5 ? "Registro Final" : stepTitles[step - 1]}`}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
 
+          {allProjects.length === 0 ? (
+            <div className="text-center py-6 space-y-3">
+              <p className="text-muted-foreground">No tienes proyectos asignados actualmente. Contacta con administración para poder registrar tus horas.</p>
+              <Button variant="outline" onClick={() => window.location.reload()}>Actualizar</Button>
+            </div>
+          ) : (
+            <>
           {/* ── Step 1: Project ── */}
           {step === 1 && (
             <>
@@ -157,28 +166,24 @@ export default function LogHours() {
             </>
           )}
 
-          {/* ── Step 2: Role ── */}
+          {/* ── Step 2: Date ── */}
           {step === 2 && (
             <>
-              <Select value={roleInProject} onValueChange={setRoleInProject}>
-                <SelectTrigger><SelectValue placeholder="Tu rol en este proyecto" /></SelectTrigger>
-                <SelectContent>
-                  {ROLES.map(r => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                <Button disabled={!roleInProject} onClick={() => setStep(3)} className="flex-1">Siguiente</Button>
+                <Button onClick={() => setStep(3)} className="flex-1">Siguiente</Button>
               </div>
             </>
           )}
 
-          {/* ── Step 3: Date ── */}
+          {/* ── Step 3: Holiday ── */}
           {step === 3 && (
             <>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              <div className="flex items-center gap-3">
+                <Switch checked={isHoliday} onCheckedChange={setIsHoliday} id="holiday" />
+                <Label htmlFor="holiday">Este día es festivo</Label>
+              </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Atrás</Button>
                 <Button onClick={() => setStep(4)} className="flex-1">Siguiente</Button>
@@ -186,22 +191,8 @@ export default function LogHours() {
             </>
           )}
 
-          {/* ── Step 4: Holiday ── */}
+          {/* ── Step 4: Task ── */}
           {step === 4 && (
-            <>
-              <div className="flex items-center gap-3">
-                <Switch checked={isHoliday} onCheckedChange={setIsHoliday} id="holiday" />
-                <Label htmlFor="holiday">Este día es festivo</Label>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={() => setStep(3)} className="flex-1">Atrás</Button>
-                <Button onClick={() => setStep(5)} className="flex-1">Siguiente</Button>
-              </div>
-            </>
-          )}
-
-          {/* ── Step 5: Task ── */}
-          {step === 5 && (
             <>
               {selectedProject?.type === "offer" ? (
                 <div className="p-3 rounded-lg bg-muted text-sm">
@@ -224,20 +215,20 @@ export default function LogHours() {
                   </Select>
                   {filteredTasks.length === 0 && roleInProject && (
                     <p className="text-xs text-muted-foreground">
-                      No hay tareas disponibles para el rol seleccionado.
+                      No hay tareas disponibles para tu rol (**{roleInProject}**).
                     </p>
                   )}
                 </>
               )}
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={() => setStep(4)} className="flex-1">Atrás</Button>
-                <Button disabled={!taskCode} onClick={() => setStep(6)} className="flex-1">Siguiente</Button>
+                <Button variant="outline" onClick={() => setStep(3)} className="flex-1">Atrás</Button>
+                <Button disabled={!taskCode} onClick={() => setStep(5)} className="flex-1">Siguiente</Button>
               </div>
             </>
           )}
 
-          {/* ── Step 6: Hours + 4XX transport fields ── */}
-          {step === 6 && (
+          {/* ── Step 5: Hours + 4XX transport fields ── */}
+          {step === 5 && (
             <>
               <div>
                 <Label>Horas trabajadas</Label>
@@ -297,7 +288,7 @@ export default function LogHours() {
               )}
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={() => setStep(5)} className="flex-1">Atrás</Button>
+                <Button variant="outline" onClick={() => setStep(4)} className="flex-1">Atrás</Button>
                 <Button onClick={handleSubmit} disabled={!hours || mutation.isPending} className="flex-1 gap-2">
                   <CheckCircle2 className="h-4 w-4" />
                   {mutation.isPending ? "Guardando..." : "Enviar"}
@@ -305,7 +296,8 @@ export default function LogHours() {
               </div>
             </>
           )}
-
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

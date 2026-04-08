@@ -1,87 +1,33 @@
 #!/bin/bash
 
 # start_all.sh
-# Script to run both backend and frontend concurrently for demo purposes
+# Script to build, start and seed the application using Docker
 
-# Configurar para detenerse en caso de error y tuberías rotas
-set -euo pipefail
+echo "🚀 Starting TimeFlow App with Docker..."
 
-echo "🚀 Iniciando Time Flow (Back + Front)..."
+# 1. Build and start containers
+echo "📦 Building and starting containers..."
+docker compose up --build -d
 
-# Función para esperar que un puerto esté abierto
-wait_for_port() {
-  local host=$1
-  local port=$2
-  local name=$3
-  local timeout=30
-  local count=0
-  
-  echo "⏳ Esperando que $name ($host:$port) esté listo..."
-  while ! nc -z "$host" "$port" 2>/dev/null; do
-    sleep 1
-    count=$((count + 1))
-    if [ $count -ge $timeout ]; then
-      echo "❌ ERROR: Tiempo de espera agotado para $name ($host:$port)."
-      return 1
-    fi
-  done
-  echo "✅ $name está listo!"
-}
+# 2. Wait for backend to be ready
+echo "⏳ Waiting for backend to be ready (migrations, etc.)..."
+# Give it a bit of time for migrations to run in the entrypoint
+sleep 5
 
-# 1. Alimentar base de datos
-echo "Verificando semilla de base de datos..."
-cd backend
-source venv/bin/activate || echo "⚠️  No venv found, usando entorno global"
-python seed_demo.py
-echo "Semilla de base de datos finalizada."
+# 3. Seed data
+echo "🌱 Seeding Demo data..."
+docker compose exec backend bash -c "export PYTHONPATH=/app && python scripts/seeds/seed_demo.py"
 
-# 2. Levantar Backend en background
-echo "Levantando Backend (FastAPI)..."
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
-BACKEND_PID=$!
+echo "🌱 Seeding Mango project data..."
+docker compose exec backend bash -c "export PYTHONPATH=/app && python scripts/seeds/seed_mango.py"
 
-# Breve espera para verificar que no muere instantáneamente (ej: puertos ocupados)
-sleep 2
-if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
-  echo "❌ ERROR: El proceso Backend falló al arrancar. Revisa si el puerto 8000 está ocupado."
-  exit 1
-fi
-
-wait_for_port localhost 8000 "Backend"
-
-# 3. Levantar Frontend en background
-cd ..
-echo "Levantando Frontend (Vite)..."
-npm run dev &
-FRONTEND_PID=$!
-
-sleep 2
-if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
-  echo "❌ ERROR: El proceso Frontend falló al arrancar. Revisa si el puerto 8080 está ocupado."
-  kill "$BACKEND_PID" 2>/dev/null || true
-  exit 1
-fi
-
-wait_for_port localhost 8080 "Frontend"
-
-cleanup() {
-    echo -e "\n🛑 Apagando servidores..."
-    # Se añade || true para evitar fallos de set -e al matar procesos que ya murieron
-    kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
-    echo "Servicios finalizados."
-}
-trap cleanup EXIT INT TERM
+# 4. Create Antonio user (optional but matches user request history)
+echo "👤 Creating user 'antonio'..."
+docker compose exec backend python -c "from app.database.session import SessionLocal; from app.models.user import User; from app.models.project import Project; from app.auth.security import get_password_hash; db=SessionLocal(); u=db.query(User).filter(User.employee_code=='antonio').first(); (u.setattr('password_hash', get_password_hash('antonio123')) if u else db.add(User(employee_code='antonio', name='Antonio Admin', password_hash=get_password_hash('antonio123'), role='Montadores', is_admin=False, home_location='Oficina'))); p=db.query(Project).filter(Project.code=='3025').first(); (p.users.append(u) if u and p and u not in p.users else None); db.commit(); print('✅ antonio ready with role Montador and project Mango assigned')"
 
 echo ""
-echo "📱 Los servicios están levantados:"
-echo "- Backend: http://localhost:8000"
-echo "- Frontend: http://localhost:8080"
+echo "✨ Everything is up and running!"
+echo "🔗 Frontend: http://localhost"
+echo "🔗 API Docs: http://localhost:8000/docs"
 echo ""
-echo "Presiona Ctrl+C para apagar los servidores de forma segura."
-
-# Supervisar si alguno de los dos muere durante la ejecución
-while kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; do
-    sleep 2
-done
-
-echo "⚠️  Uno de los servidores se ha detenido inesperadamente. Apagando..."
+echo "Logs can be followed with: docker compose logs -f"

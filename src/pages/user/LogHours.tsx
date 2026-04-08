@@ -56,10 +56,12 @@ export default function LogHours() {
   // Filter tasks using case- and accent-insensitive role comparison
   const filteredTasks = useMemo(
     () => roleInProject
-      ? tasks.filter(t =>
-        t.allowed_roles.length === 0 ||
-        t.allowed_roles.some(r => rolesMatch(r, roleInProject))
-      )
+      ? tasks
+          .filter(t =>
+            t.allowed_roles.length === 0 ||
+            t.allowed_roles.some(r => rolesMatch(r, roleInProject))
+          )
+          .sort((a, b) => a.code.localeCompare(b.code))
       : [],
     [tasks, roleInProject]
   );

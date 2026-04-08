@@ -37,7 +37,7 @@ def seed_demo_data():
         
     # Regular Users
     users = []
-    user_roles = ["Proyectistas Mecánicos", "Proyectistas Eléctricos", "Programadores", "Montadores"]
+    user_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES"]
     for i, role in enumerate(user_roles):
         code = f"USER00{i+1}"
         u = db.query(User).filter(User.employee_code == code).first()
@@ -59,50 +59,52 @@ def seed_demo_data():
     users = db.query(User).filter(User.is_admin == False).all()
         
     print("Seeding Tasks...")
-    all_roles = ["Proyectistas Mecánicos", "Proyectistas Eléctricos", "Programadores", "Montadores"]
+    # Incluimos Management para que el admin también pueda ver tareas comunes
+    all_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management"]
     
     task_catalog = [
-        # Oficina Técnica
-        ("111", "Gestión Técnica Mecánica", "Oficina Técnica", ["Proyectistas Mecánicos"]),
-        ("112", "Diseño 3D", "Oficina Técnica", ["Proyectistas Mecánicos"]),
-        ("113", "Diseño 2D", "Oficina Técnica", ["Proyectistas Mecánicos"]),
-        ("114", "Documentación Mecánica", "Oficina Técnica", ["Proyectistas Mecánicos"]),
-        ("115", "Estudio ofertas", "Oficina Técnica", ["Proyectistas Mecánicos"]),
+        # Oficina Técnica (1XX)
+        ("111", "Gestión Técnica Mecánica", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("112", "Diseño 3D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("113", "Diseño 2D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("114", "Documentación Mecánica", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("115", "Estudio ofertas", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         
-        ("121", "Gestión Técnica Eléctrica", "Oficina Técnica", ["Proyectistas Eléctricos"]),
-        ("122", "Diseño Eléctrico", "Oficina Técnica", ["Proyectistas Eléctricos"]),
-        ("123", "Programación PLC Off-line", "Oficina Técnica", ["Programadores"]),
-        ("124", "Programación Robot OffLine", "Oficina Técnica", ["Programadores"]),
-        ("125", "PeM PLC Newval", "Oficina Técnica", ["Programadores"]),
-        ("126", "PeM Robot Newval", "Oficina Técnica", ["Programadores"]),
-        ("127", "Doc. Eléctrica y Manuales", "Oficina Técnica", ["Programadores"]),
+        ("121", "Gestión Técnica Eléctrica", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        ("122", "Diseño Eléctrico", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        ("123", "Programación PLC Off-line", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
+        ("124", "Programación Robot OffLine", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
+        ("125", "PeM PLC Newval", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
+        ("126", "PeM Robot Newval", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
+        ("127", "Doc. Eléctrica y Manuales", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
 
-        # Materiales
-        ("211", "Comerciales Mecánicos (€)", "Materiales", all_roles),
-        ("212", "Materia Prima (€)", "Materiales", all_roles),
-        ("221", "Comerciales Eléctricos (€)", "Materiales", all_roles),
-        ("222", "Comerciales Fluidos (€)", "Materiales", all_roles),
+        # Materiales (2XX)
+        ("211", "Comerciales Mecánicos (€)", "Materiales", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("212", "Materia Prima (€)", "Materiales", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("221", "Comerciales Eléctricos (€)", "Materiales", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        ("222", "Comerciales Fluidos (€)", "Materiales", ["PROYECTISTAS ELECTRICOS", "Management"]),
 
-        # Taller Newval
-        ("311", "Fabricación", "Taller Newval", all_roles),
-        ("312", "Metrología", "Taller Newval", all_roles),
-        ("313", "Montaje y PaP", "Taller Newval", ["Montadores"]),
-        ("321", "Armarios y cajas", "Taller Newval", ["Montadores"]),
-        ("322", "Montaje e inst. Eléctrica", "Taller Newval", ["Montadores"]),
+        # Taller Newval (3XX)
+        ("311", "Fabricación", "Taller Newval", ["MONTADORES", "Management"]),
+        ("312", "Metrología", "Taller Newval", ["MONTADORES", "Management"]),
+        ("313", "Montaje y PaP", "Taller Newval", ["MONTADORES", "Management"]),
+        ("321", "Armarios y cajas", "Taller Newval", ["MONTADORES", "Management"]),
+        ("322", "Montaje e inst. Eléctrica", "Taller Newval", ["MONTADORES", "Management"]),
 
-        # Planta Cliente
-        ("411", "Montaje y PeM Cliente", "Planta Cliente", ["Montadores"]),
-        ("421", "Montaje e Inst. Elec. PeM Cli", "Planta Cliente", ["Montadores"]),
-        ("422", "Montaje e Inst. Flu.PeM Client", "Planta Cliente", ["Montadores"]),
+        # Planta Cliente (4XX)
+        ("411", "Montaje y PeM Cliente", "Planta Cliente", ["MONTADORES", "Management"]),
+        ("421", "Montaje e Inst. Elec. PeM Cli", "Planta Cliente", ["MONTADORES", "Management"]),
+        ("422", "Montaje e Inst. Flu.PeM Client", "Planta Cliente", ["MONTADORES", "Management"]),
         
-        ("431", "PeM y Soft Cliente", "Planta Cliente", ["Programadores"]),
-        ("432", "PeM Robot Clie", "Planta Cliente", ["Programadores"]),
-        ("433", "Formación PeM Cliente", "Planta Cliente", ["Programadores"]),
+        ("431", "PeM y Soft Cliente", "Planta Cliente", ["PROGRAMADORES", "Management"]),
+        ("432", "PeM Robot Clie", "Planta Cliente", ["PROGRAMADORES", "Management"]),
+        ("433", "Formación PeM Cliente", "Planta Cliente", ["PROGRAMADORES", "Management"]),
     ]
     
     for code, name, category, roles in task_catalog:
         t = db.query(Task).filter(Task.code == code).first()
         if not t:
+            print(f"Adding task {code}...")
             t = Task(
                 code=code,
                 name=name,
@@ -111,6 +113,9 @@ def seed_demo_data():
                 allowed_roles=roles
             )
             db.add(t)
+        else:
+            print(f"Updating task {code} allowed_roles...")
+            t.allowed_roles = roles
     db.commit()
     
     print("Seeding Projects...")

@@ -60,10 +60,11 @@ def seed_demo_data():
         
     print("Seeding Tasks...")
     # Incluimos Management para que el admin también pueda ver tareas comunes
-    all_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management"]
+    # Incluimos Management para que el admin también pueda ver tareas comunes
+    all_production_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management"]
     
     task_catalog = [
-        # Oficina Técnica (1XX)
+        # --- BLOQUE 100: OFICINA TÉCNICA ---
         ("111", "Gestión Técnica Mecánica", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         ("112", "Diseño 3D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         ("113", "Diseño 2D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
@@ -71,27 +72,28 @@ def seed_demo_data():
         ("115", "Estudio ofertas", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         
         ("121", "Gestión Técnica Eléctrica", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
-        ("122", "Diseño Eléctrico", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        ("122", "Diseño Elécrico", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        
         ("123", "Programación PLC Off-line", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
         ("124", "Programación Robot OffLine", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
         ("125", "PeM PLC Newval", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
         ("126", "PeM Robot Newval", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
         ("127", "Doc. Eléctrica y Manuales", "Oficina Técnica", ["PROGRAMADORES", "Management"]),
 
-        # Materiales (2XX)
-        ("211", "Comerciales Mecánicos (€)", "Materiales", ["PROYECTISTAS MECANICOS", "Management"]),
-        ("212", "Materia Prima (€)", "Materiales", ["PROYECTISTAS MECANICOS", "Management"]),
-        ("221", "Comerciales Eléctricos (€)", "Materiales", ["PROYECTISTAS ELECTRICOS", "Management"]),
-        ("222", "Comerciales Fluidos (€)", "Materiales", ["PROYECTISTAS ELECTRICOS", "Management"]),
+        # --- BLOQUE 200: MATERIALES (Comunes de producción) ---
+        ("211", "Comerciales Mecánicos (€)", "Materiales", all_production_roles),
+        ("212", "Materia Prima (€)", "Materiales", all_production_roles),
+        ("221", "Comerciales Eléctricos (€)", "Materiales", all_production_roles),
+        ("222", "Comerciales Fluidos (€)", "Materiales", all_production_roles),
 
-        # Taller Newval (3XX)
-        ("311", "Fabricación", "Taller Newval", ["MONTADORES", "Management"]),
-        ("312", "Metrología", "Taller Newval", ["MONTADORES", "Management"]),
+        # --- BLOQUE 300: TALLER NEWVAL ---
+        ("311", "Fabricación", "Taller Newval", all_production_roles), # Blanca en tabla = Común
+        ("312", "Metrología", "Taller Newval", all_production_roles),  # Blanca en tabla = Común
         ("313", "Montaje y PaP", "Taller Newval", ["MONTADORES", "Management"]),
         ("321", "Armarios y cajas", "Taller Newval", ["MONTADORES", "Management"]),
         ("322", "Montaje e inst. Eléctrica", "Taller Newval", ["MONTADORES", "Management"]),
 
-        # Planta Cliente (4XX)
+        # --- BLOQUE 400: PLANTA CLIENTE ---
         ("411", "Montaje y PeM Cliente", "Planta Cliente", ["MONTADORES", "Management"]),
         ("421", "Montaje e Inst. Elec. PeM Cli", "Planta Cliente", ["MONTADORES", "Management"]),
         ("422", "Montaje e Inst. Flu.PeM Client", "Planta Cliente", ["MONTADORES", "Management"]),

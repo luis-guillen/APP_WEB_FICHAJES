@@ -53,14 +53,14 @@ Para detener ambos servidores, simplemente pulsa `Ctrl + C` en esa misma termina
 
 ## 👥 Cuentas Demo Generadas
 
-Una vez que arranques el script `./start_all.sh` y abras `http://localhost:8080`, puedes probar la aplicación usando los siguientes perfiles generados dinámicamente:
+Una vez que arranques el script `./start_all.sh` y abras `http://localhost`, puedes probar la aplicación usando los siguientes perfiles generados dinámicamente:
 
 ### 👑 Panel de Administración
 *Control total sobre proyectos, creación de usuarios, reportes y exportación.*
 
 | Usuario | Contraseña | Nombre       | Rol        |
 |---------|------------|--------------|------------|
-| `ADMIN` | `admin123` | Super Admin  | Management |
+| `ADMIN` | `admin123` | Super Admin  | Admin      |
 
 ### 👷 Empleados Reales (seed_mango.py — proyecto MANGO / PRJ-002)
 *Contraseña por defecto: `1234` para todos.*
@@ -79,12 +79,15 @@ Una vez que arranques el script `./start_all.sh` y abras `http://localhost:8080`
 ### 👷 Perfiles de Empleado Demo (seed_demo.py)
 *Panel simplificado para registrar horas. Las tareas mostradas dependen de los permisos de su Rol.*
 
-| Usuario   | Contraseña | Nombre           | Rol                      |
+| Usuario   | Contraseña | Nombre           | Rol (Global)             |
 |-----------|------------|------------------|--------------------------|
-| `USER001` | `user001`  | Empleado Demo 1  | Proyectistas Mecánicos   |
-| `USER002` | `user002`  | Empleado Demo 2  | Proyectistas Eléctricos  |
-| `USER003` | `user003`  | Empleado Demo 3  | Programadores            |
-| `USER004` | `user004`  | Empleado Demo 4  | Montadores               |
+| `USER001` | `user001`  | Empleado Demo 1  | PROYECTISTAS MECANICOS   |
+| `USER002` | `user002`  | Empleado Demo 2  | PROYECTISTAS ELECTRICOS  |
+| `USER003` | `user003`  | Empleado Demo 3  | PROGRAMADORES            |
+| `USER004` | `user004`  | Empleado Demo 4  | MONTADORES               |
+
+> [!NOTE]
+> **Roles Dinámicos**: En esta versión, un usuario puede tener un rol global (como Programador) pero el Administrador puede asignarle un rol distinto para un proyecto específico (ej. Montador en Proyecto X). La plataforma detectará automáticamente qué tareas mostrar según el rol activo en el proyecto seleccionado.
 
 ---
 
@@ -145,6 +148,33 @@ npx playwright test
 Dos workflows dorados de extremo a extremo automatizados visualmente:
 - Secuencia *Admin*: Login administrativo > Crea Usuario > Crea Proyecto > Asigna Proyecto.
 - Secuencia *User*: Login de operario > Atraviesa Wizard de Fichaje Dinámico > Recibe comprobante de registro horario.
+
+---
+
+## 🏗️ Base de Datos y Semillas
+
+Para facilitar el despliegue y el desarrollo, el sistema incluye una arquitectura de datos relacional optimizada para la trazabilidad industrial.
+
+### Modelo de Datos (ERD)
+
+La base de datos se estructura en torno a 5 entidades principales:
+
+1.  **`users`**: Empleados con su código único, contraseña (hashed) y rol global.
+2.  **`projects`**: Centros de coste/trabajo con ubicación, tipo y tiempos de viaje configurados.
+3.  **`project_users` (Asociación)**: Tabla crucial que vincula usuarios a proyectos. Implementa los **Roles Dinámicos**, permitiendo que un usuario sea "Montador" en un proyecto y "Management" en otro.
+4.  **`tasks`**: Catálogo de actividades industriales (oficina, taller, planta). Controla la visibilidad mediante `allowed_roles` (formato JSON).
+5.  **`time_entries`**: El núcleo del sistema. Registra horas, horas extra, dietas, tipo de vehículo y tiempos de desplazamiento calculados.
+
+### Lógica de la Semilla (Seeders)
+
+El comando `./start_all.sh` utiliza el script `backend/scripts/seeds/seed_demo.py` que realiza las siguientes acciones:
+
+- **Infraestructura**: Crea las tablas automáticamente mediante SQLAlchemy.
+- **Catálogo Técnico**: Inyecta 27 tareas industriales categorizadas por fases (100-Oficina, 200-Materiales, 300-Taller, 400-Planta).
+- **Proyectos Tipo**: Crea proyectos de tipo `standard` (con control de KM), `offer` (licitaciones) y `non-productive` (I+D interno).
+- **Simulación Masiva**: Genera un histórico aleatorio de fichajes para los últimos 10 días para todos los empleados demo, permitiendo visualizar gráficas y métricas de inmediato en el dashboard de administración.
+
+---
 
 ---
 ## Licencia
